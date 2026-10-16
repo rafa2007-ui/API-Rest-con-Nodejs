@@ -41,7 +41,7 @@ const Users = database.collection(USERS);
 const Tienda = database.collection(TIENDA);
 
 app.get("/", (request, response) => {
-    response.redirect("/api/users")
+    response.redirect("/api-docs")
 })
 
 function verifyToken(request, response, next) {
