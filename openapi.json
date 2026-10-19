@@ -1,10 +1,25 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "API Products JWT",
-    "description": "API REST de productos con autenticación JWT. Para probar endpoints protegidos: 1) ejecuta POST /api/login, 2) pulsa Authorize e introduce el token.",
+    "title": "API Tienda JWT",
+    "description": "API REST de tienda con autenticación JWT. Para probar endpoints protegidos: ejecuta POST /api/login, copia el token y pulsa Authorize. Introduce el token sin escribir 'Bearer ' si Swagger lo añade automáticamente.",
     "version": "1.0.0"
   },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Autenticación"
+    },
+    {
+      "name": "tienda",
+      "description": "Operaciones de la tienda"
+    }
+  ],
   "components": {
     "securitySchemes": {
       "bearerAuth": {
@@ -43,29 +58,7 @@
           "token"
         ]
       },
-      "Product": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 0
-          },
-          "nombre": {
-            "type": "string",
-            "example": "Teclado"
-          },
-          "precio": {
-            "type": "number",
-            "example": 100
-          }
-        },
-        "required": [
-          "id",
-          "nombre",
-          "precio"
-        ]
-      },
-      "ProductInput": {
+      "TiendaInput": {
         "type": "object",
         "properties": {
           "nombre": {
@@ -75,6 +68,70 @@
           "precio": {
             "type": "number",
             "example": 45
+          }
+        },
+        "required": [
+          "nombre",
+          "precio"
+        ]
+      },
+      "MongoInsertResponse": {
+        "type": "object",
+        "properties": {
+          "acknowledged": {
+            "type": "boolean",
+            "example": true
+          },
+          "insertedId": {
+            "type": "string",
+            "example": "671a2b3c4d5e6f708192a3b4"
+          }
+        }
+      },
+      "MongoUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "acknowledged": {
+            "type": "boolean",
+            "example": true
+          },
+          "matchedCount": {
+            "type": "integer",
+            "example": 1
+          },
+          "modifiedCount": {
+            "type": "integer",
+            "example": 1
+          }
+        }
+      },
+      "MongoDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "acknowledged": {
+            "type": "boolean",
+            "example": true
+          },
+          "deletedCount": {
+            "type": "integer",
+            "example": 1
+          }
+        }
+      },
+      "TiendaItem": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "671a2b3c4d5e6f708192a3b4"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Teclado"
+          },
+          "precio": {
+            "type": "number",
+            "example": 100
           }
         },
         "required": [
@@ -98,10 +155,10 @@
   "paths": {
     "/api/login": {
       "post": {
-        "summary": "Iniciar sesión y obtener token JWT",
         "tags": [
           "Auth"
         ],
+        "summary": "Iniciar sesión y obtener token JWT",
         "requestBody": {
           "required": true,
           "content": {
@@ -114,74 +171,72 @@
         },
         "responses": {
           "200": {
-            "description": "Login exitoso o error de autenticación",
+            "description": "Inicio de sesión correcto",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/LoginResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/MessageResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/LoginResponse"
                 },
-                "examples": {
-                  "success": {
-                    "value": {
-                      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    }
-                  },
-                  "userNotFound": {
-                    "value": {
-                      "message": "Usuario no encontrado"
-                    }
-                  },
-                  "wrongPassword": {
-                    "value": {
-                      "message": "Contraseña incorrecta"
-                    }
-                  },
-                  "invalidJson": {
-                    "value": {
-                      "message": "Debes proporcionar datos JSON"
-                    }
-                  }
+                "example": {
+                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 }
               }
             }
+          },
+          "400": {
+            "description": "Faltan nombre o contraseña"
+          },
+          "401": {
+            "description": "Credenciales incorrectas"
+          },
+          "500": {
+            "description": "Error interno del servidor"
           }
         }
       }
     },
-    "/api/products": {
+    "/api/tienda": {
       "get": {
-        "summary": "Obtener todos los productos",
         "tags": [
-          "Products"
+          "tienda"
+        ],
+        "summary": "Obtener todos los elementos de la tienda",
+        "security": [
+          {
+            "bearerAuth": []
+          }
         ],
         "responses": {
           "200": {
-            "description": "Lista de productos",
+            "description": "Lista de elementos de la tienda",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Product"
+                    "$ref": "#/components/schemas/TiendaItem"
                   }
-                }
+                },
+                "example": [
+                  {
+                    "_id": "671a2b3c4d5e6f708192a3b4",
+                    "nombre": "Teclado",
+                    "precio": 100
+                  }
+                ]
               }
             }
+          },
+          "403": {
+            "description": "Token requerido o inválido"
           }
         }
       },
       "post": {
-        "summary": "Crear un producto",
         "tags": [
-          "Products"
+          "tienda"
         ],
+        "summary": "Añadir un elemento a la tienda",
         "security": [
           {
             "bearerAuth": []
@@ -192,113 +247,34 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProductInput"
+                "$ref": "#/components/schemas/TiendaInput"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Producto creado o error de validación",
+            "description": "Resultado de la inserción en MongoDB",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Product"
-                      }
-                    },
-                    {
-                      "$ref": "#/components/schemas/MessageResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/MongoInsertResponse"
                 }
               }
             }
           },
           "403": {
-            "description": "Token requerido o inválido",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                },
-                "examples": {
-                  "tokenRequired": {
-                    "value": {
-                      "message": "Token requerido"
-                    }
-                  },
-                  "invalidToken": {
-                    "value": {
-                      "message": "Token inválido"
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Token requerido o inválido"
           }
         }
       }
     },
-    "/api/products/{id}": {
-      "get": {
-        "summary": "Obtener un producto por ID",
-        "tags": [
-          "Products"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "example": 0
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Producto encontrado o no encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/Product"
-                    },
-                    {
-                      "$ref": "#/components/schemas/MessageResponse"
-                    }
-                  ]
-                },
-                "examples": {
-                  "found": {
-                    "value": {
-                      "id": 0,
-                      "nombre": "Teclado",
-                      "precio": 100
-                    }
-                  },
-                  "notFound": {
-                    "value": {
-                      "message": "El elemento no ha sido encontrado"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
+    "/api/tienda/{id}": {
       "put": {
-        "summary": "Actualizar un producto por ID",
         "tags": [
-          "Products"
+          "tienda"
         ],
+        "summary": "Actualizar un elemento de la tienda por ID",
         "security": [
           {
             "bearerAuth": []
@@ -309,10 +285,11 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "description": "ObjectId de MongoDB",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "example": 0
+            "example": "671a2b3c4d5e6f708192a3b4"
           }
         ],
         "requestBody": {
@@ -320,49 +297,32 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProductInput"
+                "$ref": "#/components/schemas/TiendaInput"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Producto actualizado o no encontrado",
+            "description": "Resultado de la actualización en MongoDB",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Product"
-                      }
-                    },
-                    {
-                      "$ref": "#/components/schemas/MessageResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/MongoUpdateResponse"
                 }
               }
             }
           },
           "403": {
-            "description": "Token requerido o inválido",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
+            "description": "Token requerido o inválido"
           }
         }
       },
       "delete": {
-        "summary": "Eliminar un producto por ID",
         "tags": [
-          "Products"
+          "tienda"
         ],
+        "summary": "Eliminar un elemento de la tienda por ID",
         "security": [
           {
             "bearerAuth": []
@@ -373,42 +333,26 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "description": "ObjectId de MongoDB",
             "schema": {
-              "type": "integer"
+              "type": "string"
             },
-            "example": 0
+            "example": "671a2b3c4d5e6f708192a3b4"
           }
         ],
         "responses": {
           "200": {
-            "description": "Producto eliminado o no encontrado",
+            "description": "Resultado de la eliminación en MongoDB",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Product"
-                      }
-                    },
-                    {
-                      "$ref": "#/components/schemas/MessageResponse"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/MongoDeleteResponse"
                 }
               }
             }
           },
           "403": {
-            "description": "Token requerido o inválido",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
+            "description": "Token requerido o inválido"
           }
         }
       }
